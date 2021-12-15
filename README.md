@@ -2,14 +2,24 @@
 ![PyPI status](https://img.shields.io/pypi/status/ansicolortags.svg)
 ![license](https://img.shields.io/github/license/mashape/apistatus.svg)
 ![Open Source Love](https://img.shields.io/badge/open%20source%3F-yes!-lightgrey)
-![Python 3.6](https://img.shields.io/badge/python-3.6-brightgreen.svg)
-![R](https://img.shields.io/badge/R-3.6.2-informational)
+![Python 3.8](https://img.shields.io/badge/python-3.8-brightgreen.svg)
 
 ***
 
-![Wytham Woods, Oxford](/resources/README_img/wytham_net.jpg)
 
-This repository contains code to segment, label and analyse the songs of great tits (*Parus major*) recorded in Wytham Woods, Oxford, 2020- .
+# Data log
+
+- Greece data converted to wav estimating time from bitrate - might be imprecise.
+- Data from Espartar unusable, drop
+- Only one recording from Benidorm usable, not representative. Drop.
+- Marettimo population only one (pretty bad) recording
+  
+TODO:
+Scotland
+  
+# Definitions
+
+A phrase defined as uninterrupted trill or purr + subsequent breath note, the latter included, ends where next purr begins or silence.
 
 #### Table of contents
   - [Installation](#installation)
@@ -21,39 +31,22 @@ This repository contains code to segment, label and analyse the songs of great t
 Avoid a [dependency hell](https://en.wikipedia.org/wiki/Dependency_hell)!
  > While it is possible to use pip without a virtual environment, it is not advised: virtual environments create a clean Python environment that does not interfere with any existing system installation, can be easily removed, and contain only the package versions your application needs. They help avoid a common challenge known as dependency hell.
 
-- Both pytorch and cuml should probably be installed by te user via conda - a nightmare otherwise:
-
-```
-# pytorch and cuml installation via conda
-conda install -c pytorch pytorch torchvision torchaudio   
-conda install -c rapidsai -c nvidia -c conda-forge cuml 
-```
-
-- git (gitpython) not a dependency but recommended to find project root. Provide alternatives also! 
+- git (gitpython) required
 ```
 conda install -c conda-forge gitpython
 ```
 
 - Do not upgrade/downgrade pandas within a project/environment: see https://stackoverflow.com/questions/68625748/spark-attributeerror-cant-get-attribute-new-block-on-module-pandas-core-in
 
-- Show hot to start a project and then symlink the data folder to an external drive, configure git for version control, etc
-
-# Known issues:
-If using the autoreload ipython magic, might get the following error:
-`Can't pickle <class 'pykanto.dataset.SongDataset'>: it's not the same object as pykanto.dataset.SongDataset`
-Fix: restart your kernel without the autoreload extension.
 
 1. Clone the repository:
-`git clone https://github.com/nilomr/wytham-maps.git`.
+`git clone https://github.com/nilomr/storm-petrel-song.git`.
 2. Install source code:
 `pip install .` (install) or `pip install -e .` (developer install).
 3. Follow the instructions in the [docs](/docs) in the correct order.
 
 
-# Download xeno-canto data
-```
-pip install xeno-canto
-```
+# File structure
 
 xml along these lines - one option
 ```
