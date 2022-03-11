@@ -16,24 +16,9 @@ if os.environ.get("READTHEDOCS", False) == "True":
     INSTALL_REQUIRES = []
     EXTRAS_REQUIRES = []
 else:
-    INSTALL_REQUIRES = [
-        "pandas >= 1",
-        "numpy >= 1.17",
-        "scipy >= 1.5",
-        "tqdm",
-        "ray[default]",
-        "seaborn >= 0.11",
-        "librosa >= 0.8",
-        "ujson",
-    ]
+    INSTALL_REQUIRES = []
 
-    EXTRAS_REQUIRES = {
-        'dev': [
-            'sphinx',
-            'sphinx-copybutton',
-            'sphinx-rtd-theme'
-        ]
-    }
+    EXTRAS_REQUIRES = {}
 
 
 setup(

@@ -1,0 +1,71 @@
+```{r}
+box::use(ggplot2[...])
+box::use(rprojroot[find_rstudio_root_file])
+box::use(magrittr[`%>%`])
+box::use(dplyr[rename_all, funs, mutate, pull, summarize, group_by, filter, ungroup])
+box::use(readr[read_csv])
+box::use(ggtext[element_markdown])
+
+
+root_dir <- find_rstudio_root_file()
+data_dir <- file.path(root_dir, "data")
+resources_dir <- file.path(root_dir, "resources")
+figure_dir <- file.path(root_dir, "reports", "figures")
+
+file.path(resources_dir, "sbsp_rf_feature_importance.csv")
+```
+
+```{r}
+
+feat_data = read_csv(file.path(resources_dir, "sbsp_rf_feature_importance.csv"))
+
+to_remove <- feat_data %>%
+    group_by(feature) %>%
+    summarize(median = median(value, na.rm = TRUE)) %>%
+    filter(median > 0.013) %>%
+    pull(feature)
+
+data <- feat_data[(feat_data$feature %in% to_remove), ]
+
+featplot <- data %>%
+    ggplot(aes(
+        x = reorder(feature, -value, na.rm = TRUE, FUN = median),
+        y = value
+    )) +
+    geom_point(
+        position = position_jitter(width = 0.3, height = 0.001), size = 1,
+        alpha = 0.3,
+        show.legend = FALSE,
+        colour = "#007587"
+    ) +
+    stat_summary(
+        fun.y = median, fun.ymin = median, fun.ymax = median,
+        geom = "crossbar", width = 0.7, colour = "#000000"
+    ) +
+    labs(
+        x = "",
+        y = "Feature importance\n",
+        title = " RF feature importance (*pelagicus / melitensis*)"
+    ) +
+    scale_x_discrete(labels = function(x) gsub("_", " ", x, fixed = TRUE)) +
+    theme(
+        axis.text.x = element_text(angle = 90, size = 9, vjust = 0.5, hjust = 1),
+        aspect.ratio = 1,
+        axis.ticks.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid = element_line(colour = "#f3f3f3"),
+        plot.title = ggtext::element_markdown()
+    )
+
+
+ggsave(
+    featplot,
+    path = figure_dir,
+    filename = "binary_rf_features.png",
+    width = 15,
+    height = 15,
+    units = "cm",
+    dpi = 350
+)
+```

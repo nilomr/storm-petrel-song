@@ -109,7 +109,7 @@ xml along these lines - one option
 - `Many functions in pykanto/avgn` 
 Sainburg T, Thielk M, Gentner TQ (2020) Finding, visualizing, and quantifying latent structure across diverse animal vocal repertoires. PLOS Computational Biology 16(10): e1008228. [DOI](https://doi.org/10.1371/journal.pcbi.1008228)
 
-- `pykanto/vocalseg` Code modified from Tim Sainburg. [Original repository](https://github.com/timsainb/vocalization-segmentation).
+- `pykanto/vocalseg` Code modified from Tim Sainburg. [RAW_DATAal repository](https://github.com/timsainb/vocalization-segmentation).
 
 - The `dereverberate()` function, [here](https://github.com/nilomr/great-tit-song/blob/24d9527d0512e6d735e9849bc816511c9eb24f99/pykanto/greti/audio/filter.py#L66), is based on code by Robert Lachlan ([Luscinia](https://rflachlan.github.io/Luscinia/)).
 
