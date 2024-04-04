@@ -46,6 +46,14 @@ conda install -c conda-forge gitpython
 3. Follow the instructions in the [docs](/docs) in the correct order.
 
 
+As of 2024-03-25,
+
+had to pass full path to garden
+also had to conda install libstdcxx-ng
+`conda install -c conda-forge libstdcxx-ng`
+
+
+
 # File structure
 
 xml along these lines - one option

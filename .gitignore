@@ -157,3 +157,7 @@ docs/_autosummary
 # manifest
 MANIFEST.in
 
+# pixi environments
+.pixi
+
+dia18(41)_20220718_003000_6-nice spectrogram.wav

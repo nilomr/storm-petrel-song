@@ -1,0 +1,37 @@
+
+[project]
+name = "tempesta"
+description = "Acoustic analysis of storm petrel purr songs"
+version = "0.1.0"
+authors = [{ name = "Nilo M. Recalde", email = "nilomerinorecalde@gmail.com" }]
+classifiers = [
+    'License :: OSI Approved :: MIT License',
+    'Development Status :: 4 - Beta',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+]
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = "~=3.10"
+dependencies =[
+"tqdm >=4.66.2,<4.67",
+"scipy >=1.12.0,<1.13",
+"numpy >=1.26.4,<1.27",
+"matplotlib >=3.8.3,<3.9",
+"pykanto",
+"pexpect",
+"imbalanced-learn",
+]
+
+[tool.setuptools]
+packages = ["tempesta"]
+
+
+
+[tool.black]
+line-length = 80
+
+[tool.isort]
+profile = "black"
+float_to_top = 'True'

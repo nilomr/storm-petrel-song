@@ -1,0 +1,22 @@
+# This is a configuration file for the config package written
+# by RStudio. To use, make sure the package `config` is installed,
+# via console:
+#
+# R > install.packages("config")
+#
+# Then, you can load within a notebook chunk with `library(config)`.
+#
+# To use default config settings, simply write `config::get()`.
+#
+# You can learn more at:
+#   https://cran.r-project.org/web/packages/config/vignettes/introduction.html.
+default:
+  path:
+    root: !expr rprojroot::find_rstudio_root_file()
+    data: !expr file.path(rprojroot::find_rstudio_root_file(), "data", "raw")
+    derived_data: !expr file.path(rprojroot::find_rstudio_root_file(), "data", "derived")
+    output: !expr file.path(rprojroot::find_rstudio_root_file(), "output")
+    resources: !expr file.path(rprojroot::find_rstudio_root_file(), "resources")
+    figures: !expr file.path(rprojroot::find_rstudio_root_file(), "output", "figures")
+    reports: !expr file.path(rprojroot::find_rstudio_root_file(), "output", "reports")
+    source: !expr file.path(rprojroot::find_rstudio_root_file(), "R")

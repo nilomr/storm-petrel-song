@@ -1,4 +1,3 @@
-
 # ─── DESCRIPTION ──────────────────────────────────────────────────────────────
 
 """
@@ -11,29 +10,32 @@ from __future__ import annotations
 
 import pickle
 from typing import TYPE_CHECKING, List
+
 import librosa
 import numpy as np
-from pykanto.signal.analysis import (approximate_minmax_frequency,
-                                     get_mean_sd_mfcc, spec_centroid_bandwidth)
-from pykanto.utils.compute import tqdmm
+from pykanto.signal.analysis import (
+    approximate_minmax_frequency,
+    get_mean_sd_mfcc,
+    spec_centroid_bandwidth,
+)
+from pykanto.utils.compute import with_pbar
 
 if TYPE_CHECKING:
-    from pykanto.dataset import SongDataset
+    from pykanto.dataset import KantoData
 
 # ──── FUNCTIONS ───────────────────────────────────────────────────────────────
 
 
 def extract_mfccs(
-        dataset: SongDataset,
-        note_type: str,
-        n_mfcc: int = 20) -> List[np.ndarray]:
+    dataset: KantoData, note_type: str, n_mfcc: int = 20
+) -> List[np.ndarray]:
     """
     Calculates the mean and SD for n MFCCs extracted from each note type in each
     song in the dataset. In the case of purr notes it return the mean mean and
     sd for all purr notes in a song.
 
     Args:
-        dataset (SongDataset): Song dataset object.
+        dataset (KantoData): Song dataset object.
         note_type (str): One of 'purr', 'breathe'.
         n_mfcc (int, optional): Number of MFCCs to return. Defaults to 20.
 
@@ -41,26 +43,28 @@ def extract_mfccs(
         List[np.ndarray]: List containing one array per song in the database
     """
 
-    if not hasattr(dataset.DIRS, "UNITS"):
-        raise KeyError('This function requires the output of '
-                       'pykanto.SongDataset.get_units()')
+    if "units" not in dataset.files.columns:
+        raise KeyError(
+            "This function requires the output of "
+            "pykanto.KantoData.get_units()"
+        )
 
-    idx = '-1' if note_type == 'breathe' else '0:-1'
+    idx = "-1" if note_type == "breathe" else "0:-1"
     # Iterates over IDs because data is stored gruped by ID to reduce I/O
     # bottleneck.
-    keys = list(dataset.DIRS.UNITS)
+    unitdata = set(dataset.files.units.to_list())
     mean_sd_mfccs = []
 
-    for key in tqdmm(keys, desc="Calculating MFCCs"):
-        with open(dataset.DIRS.UNITS[key], "rb") as f:
+    for song in with_pbar(unitdata, desc="Calculating MFCCs"):
+        with open(song, "rb") as f:
             kk = pickle.load(f)
 
         notes = []
         for k, v in kk.items():
-            notes.append(eval('v[' + idx + ']'))
+            notes.append(eval("v[" + idx + "]"))
 
         for note in notes:
-            if note_type == 'breathe':
+            if note_type == "breathe":
                 mean_sd = get_mean_sd_mfcc(note, n_mfcc)
             else:
                 mean_sd_purrs = []
@@ -73,130 +77,139 @@ def extract_mfccs(
     return mean_sd_mfccs
 
 
-def extract_spectral_centroids_bw(dataset: SongDataset,
-                                  note_type: str) -> List[np.ndarray]:
+def extract_spectral_centroids_bw(
+    dataset: KantoData, note_type: str
+) -> List[np.ndarray]:
     """
     Calculates the mean + SD of the spectral centroids and spectral bandwidth of
     each song in the dataset. In the case of purr notes it return the mean mean
     and sd for all purr notes in a song.
 
     Args:
-        dataset (SongDataset): Dataset with vocalisations.
+        dataset (KantoData): Dataset with vocalisations.
         note_type (str): One of 'purr', 'breathe'.
 
     Returns:
-        List[np.ndarray]: A list containing arrays with 
+        List[np.ndarray]: A list containing arrays with
         [mean centroid, sd, mean bandwidth, sd]
     """
-    if not hasattr(dataset.DIRS, "UNITS"):
-        raise KeyError('This function requires the output of '
-                       'pykanto.SongDataset.get_units() with the parameter '
-                       '`song_level = False` .')
+    if "units" not in dataset.files.columns:
+        raise KeyError(
+            "This function requires the output of "
+            "pykanto.KantoData.get_units() with the parameter "
+            "`song_level = False` ."
+        )
 
-    idx = '-1' if note_type == 'breathe' else '0:-1'
-    keys = list(dataset.DIRS.UNITS)
+    idx = "-1" if note_type == "breathe" else "0:-1"
+    unitdata = set(dataset.files.units.to_list())
     c_bw_sd = []
 
-    for key in tqdmm(keys, desc="Calculating spectral centroid + SD"):
-        with open(dataset.DIRS.UNITS[key], "rb") as f:
+    for song in with_pbar(unitdata, desc="Calculating spectral centroid + SD"):
+        with open(song, "rb") as f:
             kk = pickle.load(f)
 
         notes = []
         for k, v in kk.items():
-            notes.append(eval('v[' + idx + ']'))
+            notes.append(eval("v[" + idx + "]"))
 
         for note in notes:
-            if note_type == 'purr':
+            if note_type == "purr":
                 note = np.hstack(note)
-            centroid, bandwidth = spec_centroid_bandwidth(
-                dataset, spec=note)
+            centroid, bandwidth = spec_centroid_bandwidth(dataset, spec=note)
 
-            mean_sd = np.array([[np.nanmean(i), np.nanstd(i)]
-                                for i in [centroid, bandwidth]]).flatten()
+            mean_sd = np.array(
+                [[np.nanmean(i), np.nanstd(i)] for i in [centroid, bandwidth]]
+            ).flatten()
             c_bw_sd.append(mean_sd)
 
     return c_bw_sd
 
 
-def extract_minmax_frequencies(dataset: SongDataset,
-                               note_type: str) -> List[np.ndarray]:
+def extract_minmax_frequencies(
+    dataset: KantoData, note_type: str
+) -> List[np.ndarray]:
     """
     Calculates the approximate minimum and maximum frequencies of each note type
     in each song in the dataset.
 
     Args:
-        dataset (SongDataset): Dataset with vocalisations.
+        dataset (KantoData): Dataset with vocalisations.
         note_type (str): One of 'purr', 'breathe'.
 
     Returns:
-        List[np.ndarray]: A list containing arrays with 
+        List[np.ndarray]: A list containing arrays with
         [mean minimum frequency, sd, mean maximum frequency, sd]
     """
-    if not hasattr(dataset.DIRS, "UNITS"):
-        raise KeyError('This function requires the output of '
-                       'pykanto.SongDataset.get_units() with the parameter '
-                       '`song_level = False` .')
+    if "units" not in dataset.files.columns:
+        raise KeyError(
+            "This function requires the output of "
+            "pykanto.KantoData.get_units() with the parameter "
+            "`song_level = False` ."
+        )
 
-    idx = '-1' if note_type == 'breathe' else '0:-1'
-    keys = list(dataset.DIRS.UNITS)
+    idx = "-1" if note_type == "breathe" else "0:-1"
+    unitdata = set(dataset.files.units.to_list())
     c_bw_sd = []
 
-    for key in tqdmm(
-            keys, desc="Calculating mean and maximum frequencies + SD"):
-        with open(dataset.DIRS.UNITS[key], "rb") as f:
+    for song in with_pbar(
+        unitdata, desc="Calculating mean and maximum frequencies + SD"
+    ):
+        with open(song, "rb") as f:
             kk = pickle.load(f)
 
         notes = []
         for k, v in kk.items():
-            notes.append(eval('v[' + idx + ']'))
+            notes.append(eval("v[" + idx + "]"))
 
         for note in notes:
-            if note_type == 'purr':
+            if note_type == "purr":
                 note = np.hstack(note)
             minfreqs, maxfreqs = approximate_minmax_frequency(
-                dataset, spec=note)
+                dataset, spec=note
+            )
 
-            mean_sd = np.array([[np.nanmean(i), np.nanstd(i)]
-                                for i in [minfreqs, maxfreqs]]).flatten()
+            mean_sd = np.array(
+                [[np.nanmean(i), np.nanstd(i)] for i in [minfreqs, maxfreqs]]
+            ).flatten()
             c_bw_sd.append(mean_sd)
 
     return c_bw_sd
 
 
-def extract_flatness(dataset: SongDataset,
-                     note_type: str) -> List[np.ndarray]:
+def extract_flatness(dataset: KantoData, note_type: str) -> List[np.ndarray]:
     """
     Calculates the mean + SD spectral flatness of each note type
     in each song in the dataset.
 
     Args:
-        dataset (SongDataset): Dataset with vocalisations.
+        dataset (KantoData): Dataset with vocalisations.
         note_type (str): One of 'purr', 'breathe'.
 
     Returns:
-        List[np.ndarray]: A list containing arrays with 
+        List[np.ndarray]: A list containing arrays with
         [mean spectral flatness, SD]
     """
-    if not hasattr(dataset.DIRS, "UNITS"):
-        raise KeyError('This function requires the output of '
-                       'pykanto.SongDataset.get_units() with the parameter '
-                       '`song_level = False` .')
+    if "units" not in dataset.files.columns:
+        raise KeyError(
+            "This function requires the output of "
+            "pykanto.KantoData.get_units() with the parameter "
+            "`song_level = False` ."
+        )
 
-    idx = '-1' if note_type == 'breathe' else '0:-1'
-    keys = list(dataset.DIRS.UNITS)
+    idx = "-1" if note_type == "breathe" else "0:-1"
+    unitdata = set(dataset.files.units.to_list())
     flat_sd = []
 
-    for key in tqdmm(
-            keys, desc="Calculating spectral flatness + SD"):
-        with open(dataset.DIRS.UNITS[key], "rb") as f:
+    for song in with_pbar(unitdata, desc="Calculating spectral flatness + SD"):
+        with open(song, "rb") as f:
             kk = pickle.load(f)
 
         notes = []
         for k, v in kk.items():
-            notes.append(eval('v[' + idx + ']'))
+            notes.append(eval("v[" + idx + "]"))
 
         for note in notes:
-            if note_type == 'purr':
+            if note_type == "purr":
                 note = np.hstack(note)
 
             offset = 0
@@ -204,9 +217,11 @@ def extract_flatness(dataset: SongDataset,
                 offset = abs(np.min(note))
 
             flatness = librosa.feature.spectral_flatness(
-                S=note + offset, hop_length=dataset.parameters.hop_length,
+                S=note + offset,
+                hop_length=dataset.parameters.hop_length,
                 n_fft=dataset.parameters.fft_size,
-                win_length=dataset.parameters.window_length)
+                win_length=dataset.parameters.window_length,
+            )
 
             mean_sd = np.array([np.mean(flatness), np.std(flatness)])
 
