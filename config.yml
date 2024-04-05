@@ -20,3 +20,8 @@ default:
     figures: !expr file.path(rprojroot::find_rstudio_root_file(), "output", "figures")
     reports: !expr file.path(rprojroot::find_rstudio_root_file(), "output", "reports")
     source: !expr file.path(rprojroot::find_rstudio_root_file(), "R")
+
+  ncores: !expr future::availableCores()
+  futureplan: !expr future::plan("multisession", workers = future::availableCores())
+  progress_aes: !expr progressr::handlers("cli")
+  scinot: !expr options(scipen = 999)

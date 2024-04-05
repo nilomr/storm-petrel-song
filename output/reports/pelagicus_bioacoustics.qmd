@@ -1,0 +1,36 @@
+---
+title: "Bioacoustics Report"
+author: "Nilo Merino Recalde"
+date: today
+output: 
+    html_document:
+        toc: true
+        toc_float: true
+---
+
+
+# Introduction
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+config <- config::get()
+```
+
+
+
+# Load data
+
+```{r load_data, include=FALSE}
+
+data <- readr::read_csv(file.path(config$path$reports, 'binary_metrics_summary.csv'))
+
+```
+
+<!-- print data as nice table -->
+```{r print_data, echo=FALSE}
+knitr::kable(data)
+```
+
+
+Gini Impurity is a measurement of the likelihood of an incorrect classification of a new instance of a random variable, if that new instance were randomly classified according to the distribution of class labels from the data set.
