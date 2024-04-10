@@ -6,14 +6,6 @@ Badge](https://img.shields.io/badge/european_storm_petrel_|_purr_call_analysis-k
 version](https://img.shields.io/badge/v3.10-4295B3?style=for-the-badge&logo=python&logoColor=white)
 
 
-<img src="reports/readme.png" alt="rfmat" width="1000"/>
-
-
-![version](https://img.shields.io/badge/package_version-0.1.0-orange)
-![PyPI status](https://img.shields.io/pypi/status/ansicolortags.svg)
-![license](https://img.shields.io/github/license/mashape/apistatus.svg)
-![Open Source Love](https://img.shields.io/badge/open%20source%3F-yes!-lightgrey)
-![Python 3.8](https://img.shields.io/badge/python-3.8-brightgreen.svg)
 
 ***
 
@@ -118,16 +110,3 @@ xml along these lines - one option
     └── pykanto                <- Source code. Install with `pip install .` (install) or 
                               `pip install -e .` (developer install).
 
-## Acknowledgements
-
-
-- `Many functions in pykanto/avgn` 
-Sainburg T, Thielk M, Gentner TQ (2020) Finding, visualizing, and quantifying latent structure across diverse animal vocal repertoires. PLOS Computational Biology 16(10): e1008228. [DOI](https://doi.org/10.1371/journal.pcbi.1008228)
-
-- `pykanto/vocalseg` Code modified from Tim Sainburg. [RAW_DATAal repository](https://github.com/timsainb/vocalization-segmentation).
-
-- The `dereverberate()` function, [here](https://github.com/nilomr/great-tit-song/blob/24d9527d0512e6d735e9849bc816511c9eb24f99/pykanto/greti/audio/filter.py#L66), is based on code by Robert Lachlan ([Luscinia](https://rflachlan.github.io/Luscinia/)).
-
---------
-
-<p><small>A project by Nilo M. Recalde | based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>.</small></p>
