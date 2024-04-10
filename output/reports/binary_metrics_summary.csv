@@ -1,12 +1,12 @@
 metric,mean,CI_low,CI_high
-Sensitivity,0.9,0.89,0.92
-Specificity,0.9,0.89,0.92
-Pos Pred Value,0.91,0.89,0.92
-Neg Pred Value,0.91,0.89,0.92
-Precision,0.91,0.89,0.92
-Recall,0.9,0.89,0.92
-F1,0.9,0.89,0.91
+Sensitivity,0.892,0.885,0.899
+Specificity,0.904,0.897,0.911
+Pos Pred Value,0.908,0.902,0.914
+Neg Pred Value,0.899,0.893,0.905
+Precision,0.908,0.902,0.914
+Recall,0.892,0.885,0.899
+F1,0.896,0.892,0.901
 Prevalence,0.5,0.5,0.5
-Detection Rate,0.45,0.44,0.46
-Detection Prevalence,0.5,0.49,0.51
-Balanced Accuracy,0.9,0.89,0.91
+Detection Rate,0.446,0.442,0.449
+Detection Prevalence,0.494,0.489,0.499
+Balanced Accuracy,0.898,0.893,0.902
