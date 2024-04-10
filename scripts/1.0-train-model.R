@@ -3,6 +3,7 @@
 config <- config::get()
 box::use(R / rplot[titheme])
 box::use(R / utils[print_time_elapsed])
+box::use(patchwork)
 progressr::handlers("cli")
 message("Number of cores available: ", config$ncores)
 
@@ -163,6 +164,26 @@ extract_variable <- function(model_results, variable) {
     sapply(model_results, function(x) x[[variable]])
 }
 
+#' Function to calculate mean, standard error, and confidence intervals
+#'
+#' This function takes a metric as input and calculates the mean, standard error,
+#' and confidence intervals for that metric using the model results. Assumes
+#' that the metric is normally distributed.
+#'
+#' @param metric The metric for which to calculate the statistics.
+#' @param model_results The list of model results.
+#' @return A vector containing the mean, lower, and upper CI.
+calc_stats <- function(metric, model_results) {
+    values <- extract_variable(model_results$report, metric)
+    n <- length(values)
+    mean_val <- mean(values)
+    se_val <- sd(values) / sqrt(n)
+    c(
+        mean = mean_val, CI_low = mean_val - 1.96 * se_val,
+        CI_high = mean_val + 1.96 * se_val
+    )
+}
+
 
 #──── MAIN ───────────────────────────────────────────────────────────────────
 
@@ -178,16 +199,22 @@ data <- na.omit(data)
 
 
 # Call the function
-n <- 100
+n <- 500
 model_results <- train_model(data, TRUE, iterations = n, min_class_size = 20)
 
-# Plot distribution of (balanced) accuracy
+
+
+#──── PLOT DISTRIBUTION OF (BALANCED) ACCURACY ───────────────────────────────
+
 
 accs_df <- data.frame(
     acc = extract_variable(model_results$report, "Balanced Accuracy"),
-    random_acc = extract_variable(model_results$random_report, "Balanced Accuracy")
+    random_acc = extract_variable(
+        model_results$random_report,
+        "Balanced Accuracy"
+    )
 )
-# turn into long format
+# Turn into long format
 accs_df <- tidyr::pivot_longer(
     accs_df,
     cols = c(acc, random_acc),
@@ -195,7 +222,7 @@ accs_df <- tidyr::pivot_longer(
     values_to = "value"
 )
 
-# calculate the mean and CI of the balanced accuracy for each model
+# Calculate the mean and CI of the balanced accuracy for each model
 acc_summary <- accs_df |>
     dplyr::group_by(metric) |>
     dplyr::summarise(
@@ -208,7 +235,7 @@ acc_summary <- accs_df |>
 
 acc_label <- acc_summary |>
     dplyr::mutate(label = paste0(
-        ifelse(metric == "acc", "Balanced RF:\n", "Randomised RF:\n"),
+        ifelse(metric == "acc", "Balanced RF:\n", "Chance level:\n"),
         round(mean, 2),
         " [", round(CI_low, 2), ", ",
         round(CI_high, 2), "]"
@@ -216,39 +243,44 @@ acc_label <- acc_summary |>
     dplyr::pull(label)
 
 # Create a ggplot object
+
+# get the
+set.seed(42)
 accs_plot <-
     ggplot2::ggplot(accs_df, ggplot2::aes(x = value, fill = metric)) +
     ggplot2::geom_vline(
         xintercept = 0.5, linetype = "dashed",
         color = "#8f8f8f"
     ) +
-    ggplot2::geom_histogram(ggplot2::aes(
-        y = ggplot2::after_stat(density) / n
-    ), bins = 30, alpha = 0.3, color = NA, position = "identity") +
-    ggplot2::geom_density(ggplot2::aes(
-        y = ggplot2::after_stat(density) / n
-    ), alpha = 0.7, color = NA, adjust = 1.5) +
-    # Then, modify the labels in the scale_fill_manual function
+    ggdist::stat_histinterval(
+        ggplot2::aes(fill = metric), breaks = 10,
+        n = 1000, slab_alpha = 0.7,
+        interval_alpha = 0, point_alpha = 0
+    ) +
+    ggdist::stat_slab(
+        ggplot2::aes(fill = metric),
+        n = 1000, slab_alpha = 0.7
+    ) +
     ggplot2::scale_fill_manual(
         values = c(
-            "acc" = "#c08122",
-            "random_acc" = "#4690a7"
+            "acc" = "#52483a",
+            "random_acc" = "#b8a387"
         ),
         labels = acc_label
     ) +
     # add x ticks at 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1
     ggplot2::scale_x_continuous(
         breaks = seq(0.3, 1, 0.1),
-        limits = c(0.3, 1),
+        limits = c(0.2, 1),
         expand = c(0, 0)
     ) +
-    ggplot2::scale_y_continuous(limits = c(0, 0.6), expand = c(0, 0)) +
+    ggplot2::scale_y_continuous(limits = c(0, NA), expand = c(0, 0)) +
     ggplot2::labs(
         x = "Accuracy", y = "Density",
         fill = "Model",
-        title = "Classifier Accuracy Distribution",
+        title = "RF Classifier Accuracy",
         subtitle = paste0(
-            "*H. p. pelagicus* vs *melitensis* purr calls"
+            "Separating *H. p. pelagicus* and *melitensis* purr calls"
         )
     ) +
     titheme(aspect_ratio = 0.75) +
@@ -276,21 +308,15 @@ ggplot2::ggsave(
 # Extract the names of the metrics
 metrics_names <- names(model_results$report[[1]])
 
-# Function to calculate mean, standard error, and confidence intervals
-calc_stats <- function(metric) {
-    values <- extract_variable(model_results$report, metric)
-    n <- length(values)
-    mean_val <- mean(values)
-    se_val <- sd(values) / sqrt(n)
-    c(mean = mean_val, CI_low = mean_val - 1.96 * se_val,
-      CI_high = mean_val + 1.96 * se_val)
-}
 
-metrics_summary <- dplyr::as_tibble(t(sapply(metrics_names, calc_stats))) |>
+metrics_summary <- dplyr::as_tibble(t(sapply(
+    metrics_names, calc_stats,
+    model_results
+))) |>
     dplyr::mutate(metric = metrics_names) |>
     dplyr::select(metric, dplyr::everything()) |>
     # round dbl columns to 2 decimal places
-    dplyr::mutate_if(is.numeric, ~round(., 2))
+    dplyr::mutate_if(is.numeric, ~ round(., 3))
 
 # Save to a CSV file
 readr::write_csv(metrics_summary, file.path(
@@ -312,25 +338,18 @@ feature_importances <- do.call(rbind, lapply(
 ))
 
 # plot the 10 most important features (on average)
-top10_features <- feature_importances |>
+top5_features <- feature_importances |>
     dplyr::group_by(variable) |>
     dplyr::summarise(
         gini = mean(gini),
     ) |>
-    dplyr::top_n(10, gini) |>
+    dplyr::top_n(5, gini) |>
     dplyr::ungroup() |>
     dplyr::arrange(dplyr::desc(gini))
 
 feat_imp_plot = feature_importances |>
-    dplyr::filter(variable %in% top10_features$variable) |>
+    dplyr::filter(variable %in% top5_features$variable) |>
     ggplot2::ggplot(ggplot2::aes(x = reorder(variable, gini), y = gini)) +
-    ggdist::stat_gradientinterval(
-        ggplot2::aes(fill = gini),
-        na.rm = TRUE,
-        scale = 0.5,
-        fill_type = "gradient",
-        color
-    ) +
     ggplot2::geom_jitter(
         fill = "#3e8581",
         stroke = NA,
@@ -339,6 +358,15 @@ feat_imp_plot = feature_importances |>
         width = 0.2,
         shape = 21,
     ) +
+    ggdist::stat_pointinterval(
+        ggplot2::aes(fill = gini),
+        na.rm = TRUE,
+        scale = 0.5,
+        fill_type = "gradient",
+        color = "black",
+        interval_alpha = 0.5,
+        point_alpha = 0.5
+    ) +
     ggplot2::coord_flip() +
     ggplot2::labs(
         x = "Feature",
@@ -346,14 +374,14 @@ feat_imp_plot = feature_importances |>
         title = "RF Classifier Feature Importances",
         subtitle = "Top 10 features by mean decrease in Gini Impurity"
     ) +
-    titheme(aspect_ratio = 0.75) +
+    titheme(aspect_ratio = 1) +
     ggplot2::theme(
         plot.subtitle = ggtext::element_markdown()
     )
 
 # Save the plot
 pwidth <- 15
-pheight <- pwidth * 0.75
+pheight <- pwidth * 1
 ggplot2::ggsave(
     file.path(config$path$figures, "feature_importances.png"),
     plot = feat_imp_plot,
@@ -363,43 +391,47 @@ ggplot2::ggsave(
     units = "cm"
 )
 
-# Plot MDS and PCA
+# ──── PLOT MDS AND PCA ───────────────────────────────────────────────────────
 
-# train a random forest model on the full dataset.
+# train a random forest model on the full dataset (cap to 100 data points per ID)
+set.seed(42)
 data_subsample <- data |>
-    # sample a maximum of 30 rows per ID
     dplyr::group_by(ID) |>
-    dplyr::sample_n(size = 30, replace = TRUE) |>
+    # if an ID has mroe than 100 data points, sample 100
+    dplyr::sample_n(size = min(60, dplyr::n()), replace = FALSE) |>
     dplyr::ungroup()
 
 # Prepare data
 X = data_subsample |> dplyr::select(-c(ID, group))
 y = as.factor(data_subsample$group)
-pop = data_subsample$ID
 # scale the data
 preProc <- caret::preProcess(X, method = c("center", "scale"))
 X <- predict(preProc, X)
 
 # Train and fit Random Forest
-randforest <- train_random_forest(X, y)
+set.seed(42)
+randforest <- randomForest::randomForest(
+    x =X , y = y,
+    ntree = 500, importance = TRUE,
+    proximity = TRUE,
+)
 
 # Calculate MDS from the proximity matrix
 mds <- cmdscale(as.dist(1 - randforest$proximity))
 # add rownames to the MDS matrix (from the y labels)
 rownames(mds) <- randforest$y
 
-
 # set color palette based on population
 # create a cold palette for pelagicus and a warm palette for melitensis
 pelagicus = c(
-    "faroes" = "#d7fff7", "molene" = "#05a3a6", "norway" = "#006373",
-    "scotland" = "#bfd5c9", "iceland" = "#5e5ca5", "ireland" = "#60b1a3",
-    "montana_clara" = "#617caf", "wales" = "#9273af"
+    "norway" = "#9b5ac4", "iceland" = "#8e68bc", "faroes" = "#8177b3",
+    "scotland" = "#7485ab", "ireland" = "#6894a3", "wales" = "#5ba29b",
+    "molene" = "#4eb192", "montana_clara" = "#41bf8a"
 )
 
 melitensis = c(
-    "greece" = "#9b5847", "benidorm" = "#b35a20",
-    "sardinia" = "#f56727", "malta" = "#e8891d"
+    "benidorm" = "#e9b423", "sardinia" = "#da700d",
+    "malta" = "#ce6a5b", "greece" = "#b83647"
 )
 
 # from pop and using the pelagicus and melitensis palettes create a vector of
@@ -410,46 +442,71 @@ names(pop_colors)
 # create a vector of 21 and 22 for the shapes that correspond to y
 # (pelagicus/melitensis), repeating as necessary
 shapes = list(
-    "faroes" = 21, "molene" = 21, "norway" = 21, "scotland" = 21,
-    "iceland" = 21, "ireland" = 21, "montana_clara" = 21, "wales" = 21,
-    "greece" = 22, "benidorm" = 22, "sardinia" = 22, "malta" = 22
+    "faroes" = 24, "molene" = 24, "norway" = 24, "scotland" = 24,
+    "iceland" = 24, "ireland" = 24, "montana_clara" = 24, "wales" = 24,
+    "greece" = 21, "benidorm" = 21, "sardinia" = 21, "malta" = 21
 )
+
+# Add the pop, group, and shapes to the MDS matrix data frame for plotting
+mds <- as.data.frame(mds) |>
+    dplyr::mutate(pop = data_subsample$ID) |>
+    dplyr::mutate(group = randforest$y) |>
+    dplyr::mutate(pop = factor(pop, levels = names(pop_colors)))
 
 # Plot using ggplot2
 mds_plot <-
-as.data.frame(mds) |>
-    dplyr::mutate(group = randforest$y) |>
-    ggplot2::ggplot(ggplot2::aes(x = V1, y = V2, fill = pop, shape = y)) +
-    ggplot2::geom_point(stroke = NA, size = 2) +
-    ggplot2::stat_ellipse(level = 0.86, geom = "polygon", alpha = 0.2) +
+    as.data.frame(mds) |>
+    ggplot2::ggplot(ggplot2::aes(x = V1, y = V2, fill = pop, shape = group)) +
+    ggplot2::geom_point(stroke = NA, size = 1.5, alpha = 0.9) +
+    ggplot2::stat_ellipse(level = 0.86, geom = "polygon", alpha = 0.15) +
+    # plot the centroids of the populations
+    ggplot2::geom_point(
+        data = mds |>
+            dplyr::group_by(pop) |>
+            dplyr::mutate(
+                V1 = mean(V1),
+                V2 = mean(V2)
+            ) |> # remove repeated rows
+            dplyr::distinct(),
+        ggplot2::aes(x = V1, y = V2, fill = pop, shape = group),
+        color = "#464646",
+        size = 3
+    ) +
     ggplot2::scale_fill_manual(
         values = pop_colors,
         breaks = names(pop_colors),
         labels = function(x) gsub("_", " ", tools::toTitleCase(x))
     ) +
-    ggplot2::scale_shape_manual(values = c(21, 22), guide = FALSE) + # 21 is circle, 22 is square
+    ggplot2::scale_shape_manual(
+        values =
+            c("pelagicus" = 24, "melitensis" = 21), guide = "none"
+    ) +
     ggplot2::labs(
         x = "MDS1",
         y = "MDS2",
-        title = "Multidimensional Scaling of Random Forest Proximity Matrix",
+        title = "MDS RF Proximity Matrix",
         subtitle = "*H. p. pelagicus* and *melitensis* purr calls",
         fill = "Population"
     ) +
+    # inverse x axis
+    ggplot2::scale_x_reverse() +
+    ggplot2::scale_y_reverse() +
     titheme(aspect_ratio = 1) +
     ggplot2::theme(
         plot.subtitle = ggtext::element_markdown(),
-        legend.key = ggplot2::element_blank() # remove legend background
+        legend.key = ggplot2::element_blank(),
+        # make axis titles  10pt
+        axis.title = ggplot2::element_text(size = 10)
     ) +
     ggplot2::guides(
         fill = ggplot2::guide_legend(
-            override.aes = list(shape = shapes)
+            override.aes = list(shape = shapes, size = 2, stroke = NA)
         )
-    ) # match legend point shape to plot
-
+    )
 
 # Save the plot
 pwidth <- 15
-pheight <- pwidth * 0.75
+pheight <- pwidth
 ggplot2::ggsave(
     file.path(config$path$figures, "mds_plot.png"),
     plot = mds_plot,
@@ -459,11 +516,19 @@ ggplot2::ggsave(
     units = "cm"
 )
 
+# ──── PLOT DISTRIBUTION OF TOP5 FEATURES ────────────────────────────────────
 
-# plot the frequency distribution of the top10_features in the original data
+feat_palette <- c(
+    "pelagicus" = "#7dc1ca",
+    "melitensis" = "#e29b3d"
+)
 
+feat_dist_plot <-
 data |>
-    dplyr::select(group, top10_features$variable) |>
+    dplyr::ungroup() |>
+    dplyr::select(group, top5_features$variable) |>
+    # subsample the data to have 30 data points per group
+    dplyr::ungroup() |>
     # scale numeric columns
     dplyr::mutate(across(where(is.numeric), scale)) |>
     tidyr::pivot_longer(
@@ -471,26 +536,38 @@ data |>
         names_to = "variable",
         values_to = "value"
     ) |>
-    ggplot2::ggplot(
-        ggplot2::aes(x = value, y= as.factor(variable), fill = group)) +
-    ggplot2::geom_point(
-        ggplot2::aes(color = group),
-        stroke = NA,
-        size = 2,
-        alpha = 0.5,
-        shape = 21
+    # variable and group are factors
+    dplyr::mutate(
+        variable = as.factor(variable),
+        group = as.factor(group)
+    ) |>
+    # arrange in the same order as top5_features$variable
+    dplyr::mutate(
+        variable = forcats::fct_relevel(
+            variable, rev(top5_features$variable)
+        )
+    ) |>
+    ggplot2::ggplot(ggplot2::aes(x = value, y = variable, fill = group)) +
+    ggdist::stat_halfeye(n = 100, adjust = 1.5, slab_alpha = 0.8) +
+    # limit x axis to -4, 4
+    ggplot2::scale_x_continuous(limits = c(-4, 4)) +
+    ggplot2::scale_fill_manual(
+        values = feat_palette,
+        labels = c("melitensis" = "H. p. melitensis", "pelagicus" = "H. p. pelagicus")
     ) +
     ggplot2::labs(
         x = "Feature Value",
         y = "Density",
-        title = "Feature Value Distribution",
-        subtitle = "Top 10 features by mean decrease in Gini Impurity"
-    )
+        title = "Purr Call Features",
+        subtitle = "Top 5 features, scaled and centered",
+        fill = ""
+    ) +
+    titheme(aspect_ratio = 1.6)
 
 
 # Plot a PCA from the original data (w/ a subset of features)
 
-pca_sub = prcomp(X[, top10_features$variable], scale = TRUE)
+pca_sub = prcomp(X[, top5_features$variable], scale = TRUE)
 pca_df = as.data.frame(pca_sub$x)
 pca_df$group = y
 
@@ -501,6 +578,7 @@ loadings <- as.data.frame(pca_sub$rotation[, 1:2]) |>
 
 
 # Plot using ggplot2
+pca_plot <-
 pca_df |>
     dplyr::as_tibble() |>
     ggplot2::ggplot(ggplot2::aes(x = PC1, y = PC2)) +
@@ -518,10 +596,7 @@ pca_df |>
     stroke = NA, size = 2, shape=21) +
     ggplot2::stat_ellipse(ggplot2::aes(x = PC1, y = PC2, fill = group),
     level = 0.86, geom = "polygon", alpha = 0.2) +
-    # ggplot2::scale_fill_manual(
-    #     values = c("#c08122", "#4690a7"),
-    #     labels = c("H. p. pelagicus", "H. p. melitensis")
-    # ) +
+    ggplot2::scale_fill_manual(values = feat_palette) +
     ggplot2::labs(
         x = "PC1",
         y = "PC2",
@@ -534,3 +609,21 @@ pca_df |>
         plot.subtitle = ggtext::element_markdown(),
         legend.key = ggplot2::element_blank() # remove legend background
     )
+
+
+# ──── COMBINE PLOTS ──────────────────────────────────────────────────────────
+
+full_plot = (accs_plot + mds_plot + feat_dist_plot)
+
+# Save the plot
+pwidth <- 43
+pheight <- 15
+
+ggplot2::ggsave(
+    file.path(config$path$figures, "full_plot.png"),
+    plot = full_plot,
+    width = pwidth,
+    height = pheight,
+    dpi = 300,
+    units = "cm"
+)
