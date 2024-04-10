@@ -9,13 +9,13 @@
 
 # Data log
 
+### 2021
 - Greece data converted to wav estimating time from bitrate - might be imprecise.
 - Data from Espartar unusable, drop
 - Only one recording from Benidorm usable, not representative. Drop.
 - Marettimo population only one (pretty bad) recording
   
-TODO:
-Scotland
+### 2022
   
 # Definitions
 
@@ -31,10 +31,6 @@ A phrase defined as uninterrupted trill or purr + subsequent breath note, the la
 Avoid a [dependency hell](https://en.wikipedia.org/wiki/Dependency_hell)!
  > While it is possible to use pip without a virtual environment, it is not advised: virtual environments create a clean Python environment that does not interfere with any existing system installation, can be easily removed, and contain only the package versions your application needs. They help avoid a common challenge known as dependency hell.
 
-- git (gitpython) required
-```
-conda install -c conda-forge gitpython
-```
 
 - Do not upgrade/downgrade pandas within a project/environment: see https://stackoverflow.com/questions/68625748/spark-attributeerror-cant-get-attribute-new-block-on-module-pandas-core-in
 
