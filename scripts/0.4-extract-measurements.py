@@ -99,7 +99,7 @@ features_dict = {
 # Spectral features
 for nt in ["breathe", "purr"]:
     features_dict[f"{nt}_mfcc"] = extract_mfccs(
-        dataset, note_type=nt, n_mfcc=12
+        dataset, note_type=nt, n_mfcc=24
     )
     features_dict[f"{nt}_centroid_bw"] = extract_spectral_centroids_bw(
         dataset, note_type=nt
