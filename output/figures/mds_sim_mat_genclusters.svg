@@ -451,7 +451,7 @@
 <text x='186.61' y='245.57' text-anchor='middle' style='font-size: 12.00px;fill: #313131; font-family: "Roboto Condensed";' textLength='28.06px' lengthAdjust='spacingAndGlyphs'>MDS1</text>
 <rect x='282.18' y='71.70' width='121.87' height='113.93' style='stroke-width: 0.75; stroke: none;' />
 <rect x='282.18' y='71.70' width='121.87' height='113.93' style='stroke-width: 1.07; stroke: none;' />
-<text x='287.66' y='87.00' style='font-size: 12.00px;fill: #313131; font-family: "Roboto Condensed";' textLength='51.03px' lengthAdjust='spacingAndGlyphs'>Population</text>
+<text x='287.66' y='87.00' style='font-size: 12.00px;fill: #313131; font-family: "Roboto Condensed";' textLength='66.07px' lengthAdjust='spacingAndGlyphs'>Genetic group</text>
 <polygon points='296.30,99.08 299.17,104.06 293.42,104.06 ' style='stroke-width: 0.00; stroke: #000000; stroke-opacity: 0.90; fill: #DD6438; fill-opacity: 0.90;' />
 <rect x='288.37' y='94.47' width='15.86' height='15.86' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #DD6438; fill-opacity: 0.15;' />
 <polygon points='296.30,99.08 299.17,104.06 293.42,104.06 ' style='stroke-width: 0.00; stroke: #464646; fill: #DD6438;' />
