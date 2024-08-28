@@ -200,7 +200,7 @@ data <- data |> na.omit()
 # Assign genetic population IDs
 data = data |>
     dplyr::mutate(
-        group = dplyr::case_when(
+        gengroup = dplyr::case_when(
             ID %in% c(
                 "faroes", "molene", "norway", "scotland", "iceland",
                 "ireland", "wales", "montana_clara"
@@ -218,11 +218,6 @@ data = data |>
             ID == "greece" ~ "Eastern Mediterranean"
         ))
     )
-
-# Call the function
-n <- 100
-model_results <- train_model(data, TRUE, iterations = n, min_class_size = 20)
-
 
 # ──── PLOT MDS AND PCA ───────────────────────────────────────────────────────
 
@@ -254,8 +249,7 @@ mds <- cmdscale(as.dist(1 - randforest$proximity))
 # add rownames to the MDS matrix (from the y labels)
 rownames(mds) <- randforest$y
 
-# set color palette based on population
-# create a cold palette for pelagicus and a warm palette for melitensis
+
 pelagicus <- c(
     "Macaronesia" = "#dd6438",
     "North-Eastern Atlantic" = "#56b87b",
@@ -326,7 +320,7 @@ mds_plot <-
         y = "MDS2",
         title = "MDS RF Proximity Matrix",
         subtitle = "*H. p. pelagicus* and *melitensis* purr calls",
-        fill = "Population"
+        fill = "Group"
     ) +
     titheme(aspect_ratio = 1) +
     ggplot2::theme(
