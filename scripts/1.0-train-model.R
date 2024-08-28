@@ -349,13 +349,14 @@ top5_features <- feature_importances |>
 
 feat_imp_plot = feature_importances |>
     dplyr::filter(variable %in% top5_features$variable) |>
-    ggplot2::ggplot(ggplot2::aes(x = reorder(variable, gini), y = gini)) +
+    ggplot2::ggplot(ggplot2::aes(x = gini, y = reorder(variable, gini))) +
     ggplot2::geom_jitter(
-        fill = "#3e8581",
+        fill = "#7a7a7a",
         stroke = NA,
-        size = 1,
+        size = 1.5,
         alpha = 0.5,
-        width = 0.2,
+        width = 0,
+        height = 0.2,
         shape = 21,
     ) +
     ggdist::stat_pointinterval(
@@ -367,29 +368,105 @@ feat_imp_plot = feature_importances |>
         interval_alpha = 0.5,
         point_alpha = 0.5
     ) +
-    ggplot2::coord_flip() +
-    ggplot2::labs(
-        x = "Feature",
-        y = "Mean Decrease in Gini Impurity",
-        title = "RF Classifier Feature Importances",
-        subtitle = "Top 10 features by mean decrease in Gini Impurity"
+    # add space above the top y category
+    ggplot2::scale_y_discrete(
+        labels = c( 
+            "purr_ioi" = "Purr IOI",
+            "mean_purr_duration" = "Purr Unit\nDuration",
+            "purr_duration" = "Purr Duration",
+            "song_length" = "Song Length",
+            "breathe_duration" = "Breathe Note\nDuration"
+        ),
+        expand = ggplot2::expansion(0, 1)
     ) +
-    titheme(aspect_ratio = 1) +
+    # log the x axis
+    ggplot2::scale_x_log10(
+    ) +
+    ggplot2::labs(
+        y = "Feature",
+        x = "Mean Decrease in\nGini Impurity (log10)",
+        title = "RF Classifier Feature Importances",
+        subtitle = "Top 5 features"
+    ) +
+    titheme(aspect_ratio = 1.7) +
     ggplot2::theme(
         plot.subtitle = ggtext::element_markdown()
     )
 
-# Save the plot
-pwidth <- 15
-pheight <- pwidth * 1
-ggplot2::ggsave(
-    file.path(config$path$figures, "feature_importances.png"),
-    plot = feat_imp_plot,
-    width = pwidth,
-    height = pheight,
-    dpi = 300,
-    units = "cm"
+
+# ──── PLOT DISTRIBUTION OF TOP5 FEATURES ────────────────────────────────────
+
+feat_palette <- c(
+    "pelagicus" = "#7dc1ca",
+    "melitensis" = "#e29b3d"
 )
+
+feat_dist_plot <-
+    data |>
+    dplyr::ungroup() |>
+    dplyr::select(group, top5_features$variable) |>
+    # subsample the data to have 30 data points per group
+    dplyr::ungroup() |>
+    # scale numeric columns
+    dplyr::mutate(across(where(is.numeric), scale)) |>
+    tidyr::pivot_longer(
+        cols = -group,
+        names_to = "variable",
+        values_to = "value"
+    ) |>
+    # variable and group are factors
+    dplyr::mutate(
+        variable = as.factor(variable),
+        group = as.factor(group)
+    ) |>
+    # arrange in the same order as top5_features$variable
+    dplyr::mutate(
+        variable = forcats::fct_relevel(
+            variable, rev(top5_features$variable)
+        )
+    ) |>
+    ggplot2::ggplot(ggplot2::aes(x = value, y = variable, color = group, fill = group)) +
+    ggdist::stat_halfeye(n = 100, adjust = 1.5, slab_alpha = 0.8) +
+    # limit x axis to -4, 4
+    ggplot2::scale_x_continuous(limits = c(-4, 4)) +
+    ggplot2::scale_y_discrete(labels = c(
+        "Purr IOI" = "purr_ioi",
+        "Purr Unit\nDuration" = "mean_purr_duration",
+        "Purr Duration" = "purr_duration",
+        "Call Length" = "song_length",
+        "Breathe Note\nDuration" = "breathe_duration"
+
+    )) +
+    ggplot2::scale_fill_manual(
+        values = feat_palette,
+        labels = c("melitensis" = "H. p. melitensis", "pelagicus" = "H. p. pelagicus")
+    ) +
+    ggplot2::scale_color_manual(
+        values = colorspace::darken(feat_palette, 0.2),
+        guide = "none"
+    ) +
+    ggplot2::labs(
+        x = "Normalised\nFeature Value",
+        y = "Density",
+        title = "Purr Call Features",
+        subtitle = "Top 5 features, scaled and centered",
+        fill = ""
+    ) +
+    titheme(aspect_ratio = 1.6) +
+    # remove y axis title and labels
+    ggplot2::theme(
+        axis.title.y = ggplot2::element_blank(),
+        axis.text.y = ggplot2::element_blank(),
+        axis.ticks.y = ggplot2::element_blank(),
+        # make legend text cursive
+        legend.text = ggplot2::element_text(face = "italic")
+    )
+
+
+# join the plots
+feat_imp_plot + feat_dist_plot
+
+
 
 # ──── PLOT MDS AND PCA ───────────────────────────────────────────────────────
 
@@ -412,7 +489,7 @@ X <- predict(preProc, X)
 set.seed(42)
 randforest <- randomForest::randomForest(
     x =X , y = y,
-    ntree = 500, importance = TRUE,
+    ntree = 1000, importance = TRUE,
     proximity = TRUE,
 )
 
@@ -516,66 +593,14 @@ ggplot2::ggsave(
     units = "cm"
 )
 
-# ──── PLOT DISTRIBUTION OF TOP5 FEATURES ────────────────────────────────────
-
-feat_palette <- c(
-    "pelagicus" = "#7dc1ca",
-    "melitensis" = "#e29b3d"
-)
-
-feat_dist_plot <-
-data |>
-    dplyr::ungroup() |>
-    dplyr::select(group, top5_features$variable) |>
-    # subsample the data to have 30 data points per group
-    dplyr::ungroup() |>
-    # scale numeric columns
-    dplyr::mutate(across(where(is.numeric), scale)) |>
-    tidyr::pivot_longer(
-        cols = -group,
-        names_to = "variable",
-        values_to = "value"
-    ) |>
-    # variable and group are factors
-    dplyr::mutate(
-        variable = as.factor(variable),
-        group = as.factor(group)
-    ) |>
-    # arrange in the same order as top5_features$variable
-    dplyr::mutate(
-        variable = forcats::fct_relevel(
-            variable, rev(top5_features$variable)
-        )
-    ) |>
-    ggplot2::ggplot(ggplot2::aes(x = value, y = variable, fill = group)) +
-    ggdist::stat_halfeye(n = 100, adjust = 1.5, slab_alpha = 0.8) +
-    # limit x axis to -4, 4
-    ggplot2::scale_x_continuous(limits = c(-4, 4)) +
-    ggplot2::scale_fill_manual(
-        values = feat_palette,
-        labels = c("melitensis" = "H. p. melitensis", "pelagicus" = "H. p. pelagicus")
-    ) +
-    ggplot2::labs(
-        x = "Feature Value",
-        y = "Density",
-        title = "Purr Call Features",
-        subtitle = "Top 5 features, scaled and centered",
-        fill = ""
-    ) +
-    titheme(aspect_ratio = 1.6)
-
-
 # Plot a PCA from the original data (w/ a subset of features)
-
 pca_sub = prcomp(X[, top5_features$variable], scale = TRUE)
 pca_df = as.data.frame(pca_sub$x)
 pca_df$group = y
 
-
 # Extract PC loadings for plotting
 loadings <- as.data.frame(pca_sub$rotation[, 1:2]) |>
     tibble::rownames_to_column("variable")
-
 
 # Plot using ggplot2
 pca_plot <-
@@ -610,6 +635,18 @@ pca_df |>
         legend.key = ggplot2::element_blank() # remove legend background
     )
 
+# Save the plot
+pwidth <- 15
+pheight <- pwidth
+ggplot2::ggsave(
+    file.path(config$path$figures, "pca_plot.png"),
+    plot = pca_plot,
+    width = pwidth,
+    height = pheight,
+    dpi = 300,
+    units = "cm"
+)
+
 
 # ──── COMBINE PLOTS ──────────────────────────────────────────────────────────
 
@@ -626,4 +663,32 @@ ggplot2::ggsave(
     height = pheight,
     dpi = 300,
     units = "cm"
+)
+caption1 = "\n\nYou'll need to push plot contents down a bit to centre them on the panel."
+caption2 = "I've left titles and subtitles in place for reference, but I'll guess you'll want to remove them."
+caption = paste(caption1, caption2, sep = "\n")
+feature_plot = feat_imp_plot + feat_dist_plot +
+    ggplot2::annotate("text", x = 0, y = 0, label = " ", hjust = 0, vjust = -1) + # dirty hack to align y-axis label positions
+    patchwork::plot_annotation(
+        caption = caption,
+        theme = ggplot2::theme(plot.caption = ggplot2::element_text(hjust = 0.5))
+    )
+
+
+ggplot2::ggsave(
+    file.path(config$path$figures, "feature_plot.png"),
+    plot = feature_plot,
+    width = pwidth/2,
+    height = pheight,
+    dpi = 300,
+    units = "cm",
+)
+
+# save to svg
+ggplot2::ggsave(
+    file.path(config$path$figures, "feature_plot.svg"),
+    plot = feature_plot,
+    width = pwidth/2,
+    height = pheight,
+    units = "cm",
 )
