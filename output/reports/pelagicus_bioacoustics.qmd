@@ -8,7 +8,6 @@ output:
         toc_float: true
 ---
 
-
 # Introduction
 
 ```{r setup, include=FALSE}
@@ -16,8 +15,6 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 config <- config::get()
 ```
-
-
 
 # Load data
 
@@ -27,10 +24,29 @@ data <- readr::read_csv(file.path(config$path$reports, 'binary_metrics_summary.c
 
 ```
 
-<!-- print data as nice table -->
+## random forest results: binary task (atlantic/mediterranean)
+
 ```{r print_data, echo=FALSE}
 knitr::kable(data)
+print(getwd())
 ```
 
-
 Gini Impurity is a measurement of the likelihood of an incorrect classification of a new instance of a random variable, if that new instance were randomly classified according to the distribution of class labels from the data set.
+
+![accuracy_distribution.png](../figures/accuracy_distribution.png)
+
+![binary_rf_features.png](../figures/binary_rf_features.png)
+
+![feature_importances.png](../figures/feature_importances.png)
+
+![feature_plot.png](../figures/feature_plot.png)
+
+![full_plot.png](../figures/full_plot.png)
+
+![mds_plot_genclusters.png](../figures/mds_plot_genclusters.png)
+
+![mds_plot.png](../figures/mds_plot.png)
+
+![pca_plot.png](../figures/pca_plot.png)
+
+![similarity_matrix_genclusters.png](../figures/similarity_matrix_genclusters.png)
