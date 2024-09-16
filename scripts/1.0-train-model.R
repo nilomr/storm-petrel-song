@@ -503,7 +503,7 @@ rownames(mds) <- randforest$y
 pelagicus = c(
     "norway" = "#9b5ac4", "iceland" = "#8e68bc", "faroes" = "#8177b3",
     "scotland" = "#7485ab", "ireland" = "#6894a3", "wales" = "#5ba29b",
-    "molene" = "#4eb192", "montana_clara" = "#41bf8a"
+    "molene" = "#4eb192", "montana_clara" = "#41bf8a", "mouro" = "#41bf52"
 )
 
 melitensis = c(
@@ -519,7 +519,7 @@ names(pop_colors)
 # create a vector of 21 and 22 for the shapes that correspond to y
 # (pelagicus/melitensis), repeating as necessary
 shapes = list(
-    "faroes" = 24, "molene" = 24, "norway" = 24, "scotland" = 24,
+    "faroes" = 24, "molene" = 24, "norway" = 24, "scotland" = 24, "mouro" = 24,
     "iceland" = 24, "ireland" = 24, "montana_clara" = 24, "wales" = 24,
     "greece" = 21, "benidorm" = 21, "sardinia" = 21, "malta" = 21
 )
@@ -535,7 +535,7 @@ mds_plot <-
     as.data.frame(mds) |>
     ggplot2::ggplot(ggplot2::aes(x = V1, y = V2, fill = pop, shape = group)) +
     ggplot2::geom_point(stroke = NA, size = 1.5, alpha = 0.9) +
-    ggplot2::stat_ellipse(level = 0.86, geom = "polygon", alpha = 0.15) +
+    ggplot2::stat_ellipse(level = 0.86, geom = "polygon", alpha = 0.09) +
     # plot the centroids of the populations
     ggplot2::geom_point(
         data = mds |>

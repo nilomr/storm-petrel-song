@@ -203,7 +203,7 @@ data = data |>
         gengroup = dplyr::case_when(
             ID %in% c(
                 "faroes", "molene", "norway", "scotland", "iceland",
-                "ireland", "wales", "montana_clara"
+                "ireland", "wales", "mouro", "montana_clara"
             ) ~ "pelagicus",
             ID %in% c("benidorm", "malta", "sardinia", "greece") ~ "melitensis"
         ),
@@ -213,6 +213,7 @@ data = data |>
                 "faroes", "molene", "norway", "scotland", "iceland",
                 "ireland", "wales"
             ) ~ "North-Eastern Atlantic",
+            ID == "mouro" ~ "Cantabrian Sea",
             ID == "benidorm" ~ "Western Mediterranean",
             ID %in% c("malta", "sardinia") ~ "Central Mediterranean",
             ID == "greece" ~ "Eastern Mediterranean"
@@ -240,7 +241,7 @@ X <- predict(preProc, X)
 set.seed(42)
 randforest <- randomForest::randomForest(
     x =X , y = y,
-    ntree = 1000, importance = TRUE,
+    ntree = 1500, importance = TRUE,
     proximity = TRUE,
 )
 
@@ -270,6 +271,7 @@ names(pop_colors)
 shapes <- list(
     "Macaronesia" = 24,
     "North-Eastern Atlantic" = 24,
+    "Cantabrian Sea" = 24,
     "Western Mediterranean" = 21,
     "Central Mediterranean" = 21,
     "Eastern Mediterranean" = 21
@@ -287,7 +289,7 @@ mds_df <- dplyr::as_tibble(mds) |>
 
 mds_plot <-
     as.data.frame(mds_df) |>
-    ggplot2::ggplot(ggplot2::aes(x = V1, y = V2, fill = pop, shape = group)) +
+    ggplot2::ggplot(ggplot2::aes(x = -V1, y = V2, fill = pop, shape = group)) +
     ggplot2::geom_point(stroke = NA, size = 1.5, alpha = 0.9) +
     ggplot2::stat_ellipse(level = 0.86, geom = "polygon", alpha = 0.15) +
     # plot the centroids of the populations
@@ -299,7 +301,7 @@ mds_plot <-
                 V2 = mean(V2)
             ) |> # remove repeated rows
             dplyr::distinct(),
-        ggplot2::aes(x = V1, y = V2, fill = pop, shape = group),
+        ggplot2::aes(x = -V1, y = V2, fill = pop, shape = group),
         color = "#464646",
         size = 3
     ) +
@@ -368,26 +370,6 @@ similarity_df <- similarity_df |>
     dplyr::summarise(d = mean(Freq)) |>
     dplyr::ungroup()
 
-# Add rows for missing population
-similarity_df <- similarity_df |>
-    dplyr::bind_rows(
-        dplyr::tibble(
-            Var1 = "Cantabrian Sea",
-            Var2 = unique(labels),
-            d = NA
-        ),
-        dplyr::tibble(
-            Var1 = unique(labels),
-            Var2 = "Cantabrian Sea",
-            d = NA
-        ),
-        dplyr::tibble(
-            Var1 = "Cantabrian Sea",
-            Var2 = "Cantabrian Sea",
-            d = NA
-        ),
-
-    )
 
 yaxis_labels <-
     gsub(" ", "\n", tools::toTitleCase(names(pop_colors)))
@@ -407,9 +389,9 @@ sim_mat_plot = similarity_df |>
     ggplot2::labs(
         x = "Genetic group",
         y = "Genetic group",
-        title = "Mean RF acoustic distances",
+        title = "Mean RF acoustic proximity",
         subtitle = "between genetic groups' purr calls",
-        fill = "Mean *d*"
+        fill = "Mean<br>RF<sub><i>prox.</i></sub>"
     ) +
     titheme(aspect_ratio = 1) +
     # rotate x axis labels 45 degrees
@@ -422,7 +404,7 @@ sim_mat_plot = similarity_df |>
     ggplot2::theme(
         plot.subtitle = ggtext::element_markdown(),
         legend.title = ggtext::element_markdown(),
-                panel.background = ggplot2::element_rect(fill = NA)
+        panel.background = ggplot2::element_rect(fill = NA)
     )
 
 # Save the plot
