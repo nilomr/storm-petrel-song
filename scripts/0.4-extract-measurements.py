@@ -64,6 +64,7 @@ atlantic_pops = [
     "ireland",
     "iceland",
     "molene",
+    "mouro",
     "montana_clara",
 ]
 
