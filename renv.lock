@@ -9,14 +9,6 @@
     ]
   },
   "Packages": {
-    "AsioHeaders": {
-      "Package": "AsioHeaders",
-      "Version": "1.22.1-2",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "85bf3bd8fa58da21a22d84fd4f4ef0a8",
-      "Requirements": []
-    },
     "KernSmooth": {
       "Package": "KernSmooth",
       "Version": "2.23-20",
@@ -196,6 +188,25 @@
       "Hash": "68bd2b066e1fe780bbf62fc8bcc36de3",
       "Requirements": []
     },
+    "broom": {
+      "Package": "broom",
+      "Version": "1.0.6",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "a4652c36d1f8abfc3ddf4774f768c934",
+      "Requirements": [
+        "backports",
+        "dplyr",
+        "generics",
+        "glue",
+        "lifecycle",
+        "purrr",
+        "rlang",
+        "stringr",
+        "tibble",
+        "tidyr"
+      ]
+    },
     "bslib": {
       "Package": "bslib",
       "Version": "0.7.0",
@@ -298,6 +309,14 @@
         "tzdb",
         "vctrs"
       ]
+    },
+    "cluster": {
+      "Package": "cluster",
+      "Version": "2.1.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "5edbbabab6ce0bf7900a74fd4358628e",
+      "Requirements": []
     },
     "codetools": {
       "Package": "codetools",
@@ -882,18 +901,6 @@
         "knitr",
         "rmarkdown",
         "yaml"
-      ]
-    },
-    "httpgd": {
-      "Package": "httpgd",
-      "Version": "2.0.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "1db3dea2788722f773ca2ccecd242a5d",
-      "Requirements": [
-        "AsioHeaders",
-        "cpp11",
-        "unigd"
       ]
     },
     "httpuv": {
@@ -1876,10 +1883,10 @@
     },
     "survival": {
       "Package": "survival",
-      "Version": "3.2-13",
+      "Version": "3.4-0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "6f0a0fadc63bc6570fe172770f15bbc4",
+      "Hash": "04411ae66ab4659230c067c32966fc20",
       "Requirements": [
         "Matrix"
       ]
@@ -2038,17 +2045,6 @@
       "Hash": "f561504ec2897f4d46f0c7657e488ae1",
       "Requirements": [
         "cpp11"
-      ]
-    },
-    "unigd": {
-      "Package": "unigd",
-      "Version": "0.1.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "00864724adac92ad5b901710870c16f1",
-      "Requirements": [
-        "cpp11",
-        "systemfonts"
       ]
     },
     "urlchecker": {
