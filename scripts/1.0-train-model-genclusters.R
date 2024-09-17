@@ -231,7 +231,7 @@ data_subsample <- data |>
     dplyr::ungroup()
 
 # Prepare data
-X = data_subsample |> dplyr::select(-c(ID, group))
+X = data_subsample |> dplyr::select(-c(ID, group, gengroup))
 y = as.factor(data_subsample$group)
 # scale the data
 preProc <- caret::preProcess(X, method = c("center", "scale"))
@@ -435,4 +435,14 @@ ggplot2::ggsave(
     dpi = 300,
     units = "cm",
     device = svglite::svglite
+)
+
+# Also save the plot as a png
+ggplot2::ggsave(
+    file.path(config$path$figures, "mds_sim_mat_genclusters.png"),
+    plot = joined_plots,
+    width = pwidth,
+    height = pheight,
+    dpi = 300,
+    units = "cm"
 )

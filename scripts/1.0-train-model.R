@@ -198,7 +198,7 @@ print(paste("Dropped", missing_rows, "rows with missing values."))
 data <- na.omit(data)
 
 
-# Call the function
+# Call the main training function
 n <- 500
 model_results <- train_model(data, TRUE, iterations = n, min_class_size = 20)
 
@@ -301,6 +301,14 @@ ggplot2::ggsave(
     dpi = 300,
     units = "cm"
 )
+# save to svg
+ggplot2::ggsave(
+    file.path(config$path$figures, "accuracy_distribution.svg"),
+    plot = accs_plot,
+    width = pwidth,
+    height = pheight,
+    units = "cm"
+)
 
 #──── EXTRACT BINARY METRICS ─────────────────────────────────────────────────
 
@@ -394,6 +402,55 @@ feat_imp_plot = feature_importances |>
     )
 
 
+# Plot all features, not just the top 5
+feat_imp_plot_all = feature_importances |>
+    # remove underscores from variable names, and capitalize
+    dplyr::mutate(variable = 
+        gsub("_", " ", variable)
+    ) |>
+    ggplot2::ggplot(ggplot2::aes(x = gini, y = reorder(variable, gini))) +
+    ggplot2::geom_jitter(
+        fill = "#7a7a7a",
+        stroke = NA,
+        size = 1.5,
+        alpha = 0.5,
+        width = 0,
+        height = 0.2,
+        shape = 21,
+    ) +
+    ggdist::stat_pointinterval(
+        ggplot2::aes(fill = gini),
+        na.rm = TRUE,
+        scale = 0.5,
+        fill_type = "gradient",
+        color = "black",
+        interval_alpha = 0.5,
+        point_alpha = 0.5
+    ) +
+
+    ggplot2::labs(
+        y = "Feature",
+        x = "Mean Decrease in\nGini Impurity (log10)",
+        title = "RF Classifier Feature Importances",
+        subtitle = "All features"
+    ) +
+    titheme(aspect_ratio = 2.3) +
+    ggplot2::theme(
+        plot.subtitle = ggtext::element_markdown()
+    )
+
+# Save the plot
+pwidth <- 15
+pheight <- pwidth
+ggplot2::ggsave(
+    file.path(config$path$figures, "all_feature_importances.png"),
+    plot = feat_imp_plot_all,
+    width = pwidth,
+    height = pheight,
+    dpi = 300,
+    units = "cm"
+)
+
 # ──── PLOT DISTRIBUTION OF TOP5 FEATURES ────────────────────────────────────
 
 feat_palette <- c(
@@ -463,18 +520,14 @@ feat_dist_plot <-
     )
 
 
-# join the plots
-feat_imp_plot + feat_dist_plot
-
 
 
 # ──── PLOT MDS AND PCA ───────────────────────────────────────────────────────
 
-# train a random forest model on the full dataset (cap to 100 data points per ID)
+# train a random forest model on the full dataset (cap to 60 data points per ID)
 set.seed(42)
 data_subsample <- data |>
     dplyr::group_by(ID) |>
-    # if an ID has mroe than 100 data points, sample 100
     dplyr::sample_n(size = min(60, dplyr::n()), replace = FALSE) |>
     dplyr::ungroup()
 
@@ -516,7 +569,7 @@ melitensis = c(
 pop_colors = c(pelagicus, melitensis)
 names(pop_colors)
 
-# create a vector of 21 and 22 for the shapes that correspond to y
+# create a vector of shapes that correspond to y
 # (pelagicus/melitensis), repeating as necessary
 shapes = list(
     "faroes" = 24, "molene" = 24, "norway" = 24, "scotland" = 24, "mouro" = 24,
@@ -592,6 +645,14 @@ ggplot2::ggsave(
     dpi = 300,
     units = "cm"
 )
+# save to svg
+ggplot2::ggsave(
+    file.path(config$path$figures, "mds_plot.svg"),
+    plot = mds_plot,
+    width = pwidth,
+    height = pheight,
+    units = "cm"
+)
 
 # Plot a PCA from the original data (w/ a subset of features)
 pca_sub = prcomp(X[, top5_features$variable], scale = TRUE)
@@ -607,6 +668,10 @@ pca_plot <-
 pca_df |>
     dplyr::as_tibble() |>
     ggplot2::ggplot(ggplot2::aes(x = PC1, y = PC2)) +
+    ggplot2::geom_point(ggplot2::aes(x = PC1, y = PC2, fill = group),
+    stroke = NA, size = 2, shape=21) +
+    ggplot2::stat_ellipse(ggplot2::aes(x = PC1, y = PC2, fill = group),
+    level = 0.86, geom = "polygon", alpha = 0.2) +
     ggplot2::geom_segment(
         data = loadings,
         ggplot2::aes(x = 0, y = 0, xend = PC1 * 3, yend = PC2 * 3),
@@ -617,10 +682,6 @@ pca_df |>
         "text", x = loadings$PC1 * 3, y = loadings$PC2 * 3,
         label = loadings$variable, size = 3
     ) +
-    ggplot2::geom_point(ggplot2::aes(x = PC1, y = PC2, fill = group),
-    stroke = NA, size = 2, shape=21) +
-    ggplot2::stat_ellipse(ggplot2::aes(x = PC1, y = PC2, fill = group),
-    level = 0.86, geom = "polygon", alpha = 0.2) +
     ggplot2::scale_fill_manual(values = feat_palette) +
     ggplot2::labs(
         x = "PC1",
@@ -638,12 +699,21 @@ pca_df |>
 # Save the plot
 pwidth <- 15
 pheight <- pwidth
+
 ggplot2::ggsave(
     file.path(config$path$figures, "pca_plot.png"),
     plot = pca_plot,
     width = pwidth,
     height = pheight,
     dpi = 300,
+    units = "cm"
+)
+
+ggplot2::ggsave(
+    file.path(config$path$figures, "pca_plot.svg"),
+    plot = pca_plot,
+    width = pwidth,
+    height = pheight,
     units = "cm"
 )
 
@@ -664,6 +734,16 @@ ggplot2::ggsave(
     dpi = 300,
     units = "cm"
 )
+
+# Save the plot to svg
+ggplot2::ggsave(
+    file.path(config$path$figures, "full_plot.svg"),
+    plot = full_plot,
+    width = pwidth,
+    height = pheight,
+    units = "cm"
+)
+
 caption1 = "\n\nYou'll need to push plot contents down a bit to centre them on the panel."
 caption2 = "I've left titles and subtitles in place for reference, but I'll guess you'll want to remove them."
 caption = paste(caption1, caption2, sep = "\n")
